@@ -156,7 +156,7 @@ class Network(object):
         assert c_i % group == 0
         assert c_o % group == 0
         # Convolution for a given input and kernel
-        convolve = lambda i, k: tf.nn.conv2d(input=i, filters=k, strides=[1, s_h, s_w, 1], padding='VALID')
+        convolve = lambda i, k: tf.nn.conv2d(input=i, filters=k, strides=[ 1, s_h, s_w, 1], padding='VALID')
         
         with tf.compat.v1.variable_scope(name, use_resource=False) as scope:
             kernel = self.make_var('weights', shape=[k_h, k_w, c_i // group, c_o])

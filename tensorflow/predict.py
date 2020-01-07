@@ -25,7 +25,7 @@ def startNetwork(model_data_path):
     batch_size = 1
 
     # Create a placeholder for the input image         
-    input_node = tf.compat.v1.placeholder(dtype=tf.float32, shape=(1, 1, height, width, channels))
+    input_node = tf.compat.v1.placeholder(dtype=tf.float32, shape=( 1, height, width, channels))
 
     # Construct the network
     net = models.ResNet50UpProj({'data': input_node}, batch_size, 1, False)
@@ -67,7 +67,7 @@ def predict(model_data_path, image_path):
     # img = np.expand_dims(np.asarray(img), axis = 0)
    
     # Create a placeholder for the input image
-    input_node = tf.compat.v1.placeholder(dtype=tf.float32, shape=(1 , 1, height, width, channels))
+    input_node = tf.compat.v1.placeholder(dtype=tf.float32, shape=( 1, height, width, channels))
 
     # Construct the network
     net = models.ResNet50UpProj({'data': input_node}, batch_size, 1, False)
@@ -84,7 +84,7 @@ def predict(model_data_path, image_path):
     net.load(model_data_path, sess) 
     
     # Evalute the network for the given image
-    pred = sess.run(net.get_output(), feed_dict={input_node: img[None,:,:,:]})
+    pred = sess.run(net.get_output(), feed_dict={input_node: img[:,:,:]})
     
     # Plot result
     fig = plt.figure()
