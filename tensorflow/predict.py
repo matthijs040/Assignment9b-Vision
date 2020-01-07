@@ -10,6 +10,8 @@ from PIL import Image
 
 import models
 
+import cv2 as cv
+
 import collections
 
 
@@ -38,11 +40,31 @@ def startNetwork(model_data_path):
     net.load(model_data_path, sess) 
 
     #using a namedtuple to return the network state.
-    Netstuff = collections.namedtuple('netstuff', ['sess', 'net', 'input_node'] )
-    netstuff = Netstuff(sess, net, input_node)
+    Network = collections.namedtuple('Network', ['sess', 'net', 'input_node'] )
+    network = Network(sess, net, input_node)
     print('returning the model')
     
-    return netstuff
+    return network
+
+def predictFromImage(network, image):
+
+    # Default input size
+    height = 228
+    width = 304
+   
+    # read cv image
+    img = image.resize([width,height], Image.ANTIALIAS)
+    img = np.array(img).astype('float32')
+    img = np.expand_dims(np.asarray(img), axis = 0)
+   
+    # Evalute the network for the given image
+    pred = network.sess.run(network.net.get_output(), feed_dict={ network.input_node: img[:,:,:]})
+    
+    # Convert 1 or 2d sequence of scalars to RGBA array.
+    # https://matplotlib.org/3.1.1/api/cm_api.html#matplotlib.cm.ScalarMappable 
+    out_img = plt.cm.ScalarMappable().to_rgba( pred[0,:,:,0], alpha=None, bytes=True, norm=True) # bytes = true makes uint8
+
+    return out_img 
 
 #v1.variable_scope()
 def predict(model_data_path, image_path):
@@ -94,6 +116,20 @@ def predict(model_data_path, image_path):
     
     return pred
 
+vid_capture = cv.VideoCapture(0)
+
+def openWebcam( network ):
+
+    while(True):
+
+        # Capture each frame of webcam video
+        frame = vid_capture.read()
+        cv.imshow("video", frame)
+        cv.imshow("processed", predictFromImage(frame, network) )
+        
+        # Close and break the loop after pressing "x" key
+        if cv.waitKey(1) &0XFF == ord('x'):
+            break
                 
 def main():
     # Parse arguments
@@ -103,7 +139,9 @@ def main():
     args = parser.parse_args()
 
     # Predict the image
-    predict(args.model_path, args.image_paths)
+    # predict(args.model_path, args.image_paths)
+    
+    openWebcam( startNetwork(args.model_data_path) )
     
     os._exit(0)
 
