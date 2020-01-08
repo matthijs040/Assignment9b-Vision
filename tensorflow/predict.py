@@ -15,8 +15,6 @@ import cv2 as cv
 import collections
 
 
-import numpy
-
 
 def startNetwork(model_data_path):
 
@@ -26,13 +24,13 @@ def startNetwork(model_data_path):
     channels = 3
     batch_size = 1
 
-    # Create a placeholder for the input image         
+    # Create a placeholder for the input image
     input_node = tf.compat.v1.placeholder(dtype=tf.float32, shape=( 1, height, width, channels))
 
     # Construct the network
     net = models.ResNet50UpProj({'data': input_node}, batch_size, 1, False)
 
-    sess = tf.compat.v1.Session() 
+    sess = tf.compat.v1.Session()
 
     # Load the converted parameters
     print('Loading the model')
@@ -53,7 +51,8 @@ def predictFromImage(network, image):
     width = 304
    
     # read cv image
-    img = image.resize([width,height], Image.ANTIALIAS)
+    img = Image.fromarray(image)
+    img = img.resize( [width,height] , Image.ANTIALIAS)
     img = np.array(img).astype('float32')
     img = np.expand_dims(np.asarray(img), axis = 0)
    
@@ -78,7 +77,7 @@ def predict(model_data_path, image_path):
    
     # Read image
     img = Image.open(image_path)
-    img = img.resize([width,height], Image.ANTIALIAS)
+    img = img.resize([width, height], Image.ANTIALIAS)
     img = np.array(img).astype('float32')
     img = np.expand_dims(np.asarray(img), axis = 0)
 
@@ -116,32 +115,41 @@ def predict(model_data_path, image_path):
     
     return pred
 
-vid_capture = cv.VideoCapture(0)
 
+ 
 def openWebcam( network ):
+
+    vid_capture = cv.VideoCapture(0)
+    cv.namedWindow("cam", cv.WINDOW_NORMAL)
+    cv.namedWindow("net", cv.WINDOW_NORMAL)
 
     while(True):
 
         # Capture each frame of webcam video
-        frame = vid_capture.read()
-        cv.imshow("video", frame)
-        cv.imshow("processed", predictFromImage(frame, network) )
-        
-        # Close and break the loop after pressing "x" key
-        if cv.waitKey(1) &0XFF == ord('x'):
-            break
+
+        if( vid_capture.read() ):
+
+            ret, frame = vid_capture.read()
+            cv.imshow("cam", frame)
+
+            frame = predictFromImage(network, frame)
+            cv.imshow("net", frame )
+
+            # Close and break the loop after pressing "x" key
+            if cv.waitKey(1) &0XFF == ord('x'):
+                break
                 
 def main():
     # Parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('model_path', help='Converted parameters for the model')
-    parser.add_argument('image_paths', help='Directory of images to predict')
+    #parser.add_argument('image_paths', help='Directory of images to predict')
     args = parser.parse_args()
 
     # Predict the image
     # predict(args.model_path, args.image_paths)
-    
-    openWebcam( startNetwork(args.model_data_path) )
+        
+    openWebcam( startNetwork(args.model_path) )
     
     os._exit(0)
 
