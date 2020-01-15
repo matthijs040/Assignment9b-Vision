@@ -1,20 +1,16 @@
 import argparse
 import os
 import numpy as np
-
 import tensorflow as tf
-tf.compat.v1.disable_eager_execution()
-
 from matplotlib import pyplot as plt
 from PIL import Image
-
 import models
-
 import cv2 as cv
-
 import collections
+import scipy.io
+from skimage.metrics import structural_similarity as ssim
 
-
+tf.compat.v1.disable_eager_execution()
 
 def startNetwork(model_data_path):
 
@@ -28,7 +24,7 @@ def startNetwork(model_data_path):
     input_node = tf.compat.v1.placeholder(dtype=tf.float32, shape=( 1, height, width, channels))
 
     # Construct the network
-    net = models.ResNet50UpProj({'data': input_node}, batch_size, 1, False)
+    net = models.ResNet50UpProj({'data': input_node}, batch_size, 1, False, trainable=False)
 
     sess = tf.compat.v1.Session()
 
@@ -52,7 +48,7 @@ def predictFromImage(network, image):
    
     # read cv image
     img = Image.fromarray(image)
-    img = img.resize( [width,height] , Image.ANTIALIAS)
+    img = img.resize( (width,height) , Image.ANTIALIAS)
     img = np.array(img).astype('float32')
     img = np.expand_dims(np.asarray(img), axis = 0)
    
@@ -116,29 +112,63 @@ def predict(model_data_path, image_path):
     return pred
 
 
- 
-def openWebcam( network ):
+def nop():
+    return
 
-    vid_capture = cv.VideoCapture(0)
-    cv.namedWindow("cam", cv.WINDOW_NORMAL)
-    cv.namedWindow("net", cv.WINDOW_NORMAL)
+# Sets image to the correct size for comparison, e.g. 228 x 304, the output of the NN.
+# then, converts it to grayscale to make it one channel that needs comparison.
+def prepImage(image):
 
-    while(True):
+    image = cv.resize( src=image, dsize=(228, 304), dst=image, interpolation=cv.INTER_CUBIC )
 
-        # Capture each frame of webcam video
+    print('resized dimensions = ') 
+    print(image.shape)
 
-        if( vid_capture.read() ):
+    gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
-            ret, frame = vid_capture.read()
-            cv.imshow("cam", frame)
+    print('gray converted = ') 
+    print(gray.shape)
 
-            frame = predictFromImage(network, frame)
-            cv.imshow("net", frame )
+    return gray
 
-            # Close and break the loop after pressing "x" key
-            if cv.waitKey(1) &0XFF == ord('x'):
-                break
-                
+def loadImage():
+    print('please provide the path to an image: ')
+    imagePath = input()
+    image = cv.imread(imagePath)
+    return image
+
+
+# Mean Squared Error comparison on openCV images.
+# From: https://www.pyimagesearch.com/2014/09/15/python-compare-two-images/
+def mse(imageA, imageB):
+
+    # the 'Mean Squared Error' between the two images is the
+    # sum of the squared difference between the two images;
+    # NOTE: the two images must have the same dimension
+
+    err = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
+    err /= float(imageA.shape[0] * imageA.shape[1])
+
+    # return the MSE, the lower the error, the more "similar"
+    # the two images are
+    return err
+
+def compare_images(imageA, imageB):
+
+    # compute the mean squared error and structural similarity
+    # index for the images
+    m = mse(imageA, imageB)
+    s = ssim(imageA, imageB)
+
+    print('mse comparison result: ')
+    print(m)
+
+    print('ssim (Structural Simularity) comparison result: ')
+    print(s)
+
+    return m , s
+
+
 def main():
     # Parse arguments
     parser = argparse.ArgumentParser()
@@ -146,17 +176,31 @@ def main():
     #parser.add_argument('image_paths', help='Directory of images to predict')
     args = parser.parse_args()
 
-    # Predict the image
-    # predict(args.model_path, args.image_paths)
+    network = startNetwork(args.model_path)
+
+    while True:
+
+        print('RGB image:')
+        RGBImage = loadImage() 
         
-    openWebcam( startNetwork(args.model_path) )
-    
+        print('Depth image:')
+        DepthImage = prepImage( loadImage() )
+
+        PredImage = prepImage( predictFromImage(network, RGBImage) )
+
+        compare_images(DepthImage, PredImage)
+        while True:
+            cv.imshow("true depth", DepthImage)
+            cv.imshow("pred depth", PredImage)
+
+            if cv.waitKey(1) & 0xFF == ord('q'):
+                break
+        
+
+
+
+
     os._exit(0)
 
 if __name__ == '__main__':
     main()
-
-        
-
-
-
