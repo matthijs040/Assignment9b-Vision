@@ -200,10 +200,9 @@ def main():
     main function where the model file is parsed,
     the network is started and the main loop for processing images begins.
     """
-    # Parse arguments
+
     parser = argparse.ArgumentParser()
     parser.add_argument('model_path', help='Converted parameters for the model')
-    #parser.add_argument('image_paths', help='Directory of images to predict')
     args = parser.parse_args()
 
     network = start_network(args.model_path)
