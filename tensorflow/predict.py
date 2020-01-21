@@ -230,26 +230,26 @@ def main():
     parser.add_argument('model_path', help='Converted parameters for the model')
     args = parser.parse_args()
 
-    # network = start_network(args.model_path)
-    open_webcam(start_network(args.model_path))
+    network = start_network(args.model_path)
+    open_webcam(network)
 
-    while True:
-
-        print('RGB image:')
-        rgb_image = load_image()
-
-        print('Depth image:')
-        depth_image = prep_image(load_image())
-
-        pred_image = prep_image(predict_from_image(network, rgb_image))
-
-        compare_images(depth_image, pred_image)
-        while True:
-            cv.imshow("true depth", depth_image)
-            cv.imshow("pred depth", pred_image)
-
-            if cv.waitKey(1) & 0xFF == ord('q'):
-                break
+#    while True:
+#
+#        print('RGB image:')
+#        rgb_image = load_image()
+#
+#        print('Depth image:')
+#        depth_image = prep_image(load_image())
+#
+#        pred_image = prep_image(predict_from_image(network, rgb_image))
+#
+#        compare_images(depth_image, pred_image)
+#        while True:
+#            cv.imshow("true depth", depth_image)
+#            cv.imshow("pred depth", pred_image)
+#
+#            if cv.waitKey(1) & 0xFF == ord('q'):
+#                break
 
 if __name__ == '__main__':
     main()
