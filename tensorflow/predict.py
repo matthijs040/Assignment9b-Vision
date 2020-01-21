@@ -194,6 +194,31 @@ def compare_images(image_a, image_b):
 
     return mean_error, struc_sim
 
+def open_webcam(network):
+    """
+    This function opens a webcam, provides its images to the network and displays its output.
+    """
+
+    vid_capture = cv.VideoCapture(0)
+    cv.namedWindow("cam", cv.WINDOW_NORMAL)
+    cv.namedWindow("net", cv.WINDOW_NORMAL)
+
+    while True:
+
+        # Capture each frame of webcam video
+
+        if vid_capture.read():
+
+            ret, frame = vid_capture.read()
+            cv.imshow("cam", frame)
+
+            frame = predict_from_image(network, frame)
+            cv.imshow("net", frame)
+
+            # Close and break the loop after pressing "x" key
+            if cv.waitKey(1) &0XFF == ord('x'):
+                break
+
 
 def main():
     """
@@ -205,7 +230,8 @@ def main():
     parser.add_argument('model_path', help='Converted parameters for the model')
     args = parser.parse_args()
 
-    network = start_network(args.model_path)
+    # network = start_network(args.model_path)
+    open_webcam(start_network(args.model_path))
 
     while True:
 
