@@ -231,6 +231,10 @@ def main():
     args = parser.parse_args()
 
     network = start_network(args.model_path)
+
+    print('give an input to continue ')
+    input()
+
     open_webcam(network)
 
 #    while True:
